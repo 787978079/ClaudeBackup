@@ -15,6 +15,15 @@
   <a href="SECURITY.md">安全策略</a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/787978079/ClaudeBackup/releases/latest"><img src="https://img.shields.io/github/v/release/787978079/ClaudeBackup?display_name=tag&color=5B6FFF" alt="Release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/787978079/ClaudeBackup?color=8B7FFF" alt="License"></a>
+  <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+">
+  <img src="https://img.shields.io/badge/platform-Windows%2011-0078D4" alt="Platform Windows 11">
+  <a href="https://github.com/787978079/ClaudeBackup/releases"><img src="https://img.shields.io/github/downloads/787978079/ClaudeBackup/total?color=A78BFA" alt="Total downloads"></a>
+  <a href="https://github.com/787978079/ClaudeBackup/actions/workflows/ci.yml"><img src="https://github.com/787978079/ClaudeBackup/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+</p>
+
 ---
 
 ## 它解决什么
