@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Virtualenv
+.venv/
+venv/
+env/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Inno Setup output
+dist-installer/
+
+# Deployment markers / runtime logs
+*.deployed
+deploy_admin.log
+*.log
+launch.err
+launch.out
+gui_launch.err
+gui_launch.out
+debug.err
+debug.out
+
+# Local debug helpers (not part of the product)
+debug_*.py
+
+# UX validation screenshots (regenerated each run)
+ux_screenshots/
+.visual-smoke/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+Thumbs.db
+.DS_Store
