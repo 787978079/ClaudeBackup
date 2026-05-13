@@ -72,16 +72,17 @@ QMainWindow, QDialog {{
 }}
 
 /* ---------- 卡片 ---------- */
-/* 不画 border：靠 surface 色和外层 bg 色的对比区分卡片边界；
-   原 1px solid border 在深色主题下表现为暗灰描边，用户反馈"框感"重。 */
+/* 完全扁平：bg 用 transparent 而非 surface 色 — 否则 surface(#1A1A1F)
+   填充块浮在 page bg(#0E0E10) 上仍能看出"矩形阴影框"，用户明确反馈这点。
+   靠间距 + 内容 H1/H3 标题区分卡片，不依赖背景色块。 */
 QFrame#Card {{
-    background-color: {p.surface};
+    background: transparent;
     border: none;
     border-radius: 14px;
     padding: 0px;
 }}
 QFrame#Card:hover {{
-    background-color: {p.surface_hover};
+    background: transparent;
 }}
 
 QFrame#TopBar {{
@@ -169,10 +170,10 @@ QPushButton#DangerBtn:hover {{
 }}
 
 /* ---------- 大动作卡片按钮 ---------- */
-/* 默认 border: none，hover 时才显紫色描边作为悬停反馈；
-   原 1px 暗灰描边在静止状态形成肉眼可见的"框感"。 */
+/* 完全扁平：bg 用 transparent，hover 时才显轻微 surface_hover 反馈；
+   原 surface 填充在 page bg 上即使无 border 也形成"矩形浮起"框感。 */
 QPushButton#ActionCard {{
-    background-color: {p.surface};
+    background: transparent;
     color: {p.text};
     border: 1px solid transparent;
     border-radius: 14px;
@@ -184,11 +185,11 @@ QPushButton#ActionCard:hover {{
     border-color: {p.primary_a};
 }}
 QPushButton#ActionCard:pressed {{
-    background-color: {p.surface};
+    background: transparent;
 }}
 QPushButton#ActionCard:disabled {{
     color: {p.text_dim};
-    background-color: transparent;
+    background: transparent;
     border-color: transparent;
 }}
 QPushButton#ActionCard:disabled QLabel {{
@@ -257,6 +258,9 @@ QLineEdit, QTextEdit {{
 }}
 
 /* ---------- 标签 ---------- */
+/* QLabel 全局透明：默认 QWidget {{ background-color: bg }} 会染所有 QLabel 成 page bg 色，
+   嵌在 hover 卡片/彩色容器里时显出"标签矩形蒙版"。强制 transparent 让标签纯粹绘制文字。 */
+QLabel {{ background: transparent; }}
 QLabel#H1 {{ font-size: 28px; font-weight: 700; color: {p.text}; }}
 QLabel#H2 {{ font-size: 20px; font-weight: 600; color: {p.text}; }}
 QLabel#H3 {{ font-size: 16px; font-weight: 600; color: {p.text}; }}
@@ -293,10 +297,10 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
 QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{ background: transparent; }}
 
 /* ---------- 表格 / 列表 ---------- */
-/* 列表本身不画 border：列表通常嵌在 Card 内，再加 1px 描边会形成"卡中卡"的双层框感。
-   靠 surface 色和外层背景的差异区分边界。 */
+/* 完全扁平：列表 bg 也用 transparent — 否则 surface 色块浮在 page bg 上还是"框"。
+   列表项之间靠 row 间距 + selected 高亮色区分。 */
 QListWidget, QTreeWidget, QTableWidget {{
-    background-color: {p.surface};
+    background: transparent;
     border: none;
     border-radius: 10px;
     outline: none;
