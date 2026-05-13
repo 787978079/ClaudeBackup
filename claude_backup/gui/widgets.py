@@ -283,6 +283,12 @@ class TimelineRow(QWidget):
         color = _TIMELINE_KIND_COLOR.get(kind, _TIMELINE_KIND_COLOR["commit"])
         kind_zh = _TIMELINE_KIND_ZH.get(kind, kind)
 
+        # 自身透明，避免被全局 QWidget 背景色染暗后与 QListWidget surface 形成横向亮条
+        # 透明规则统一在 theme.py 全局 QSS（QWidget#TimelineRow { background: transparent }）里声明，
+        # 否则 widget-level setStyleSheet 会被 app-level 的 QWidget 通配规则压住
+        self.setObjectName("TimelineRow")
+        self.setAttribute(Qt.WA_StyledBackground, True)
+
         lay = QHBoxLayout(self)
         lay.setContentsMargins(8, 6, 8, 6)
         lay.setSpacing(10)

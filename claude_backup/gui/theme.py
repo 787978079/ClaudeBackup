@@ -305,6 +305,13 @@ QListWidget::item:selected, QTreeWidget::item:selected {{
     color: white;
 }}
 
+/* TimelineRow 整行 + 内部 QLabel 全部透明，避免行内 col-spacing 间隙漏出 surface 形成"线框"
+   （彩色 bar、徽章因自带 setStyleSheet 优先级更高，不受此规则影响） */
+QWidget#TimelineRow,
+QWidget#TimelineRow QLabel {{
+    background: transparent;
+}}
+
 /* ---------- 菜单 ---------- */
 QMenu {{
     background-color: {p.surface};
