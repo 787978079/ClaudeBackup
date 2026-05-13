@@ -18,14 +18,14 @@ from PySide6.QtWidgets import (
     QListWidgetItem, QPlainTextEdit, QSplitter, QVBoxLayout, QWidget,
 )
 
-from . import dialogs
+from . import dialogs, icons
 from .widgets import PrimaryButton, SecondaryButton, make_label
 from .. import core
 
 
-_KIND_EMOJI = {
-    "commit": "🔵", "bundle": "🟢",
-    "dir_snapshot": "📁", "release": "⭐",
+_KIND_ICON_KEY = {
+    "commit": "kind-commit", "bundle": "kind-bundle",
+    "dir_snapshot": "kind-dir-snapshot", "release": "kind-release",
 }
 _KIND_LABEL_ZH = {
     "commit": "提交", "bundle": "时间快照",
@@ -57,7 +57,7 @@ class FileHistoryDialog(QDialog):
         self._entry = project_entry
         # 只保留目录快照（与时间机器一致：聚焦完整目录快照之间的文件级对比/恢复）
         self._all_points = [p for p in (points or []) if p.kind == "dir_snapshot"]
-        self.setWindowTitle(f"📄 文件历史 — {project_entry.name}")
+        self.setWindowTitle(f"文件历史 — {project_entry.name}")
         self.setMinimumSize(1080, 700)
         self._versions: list[core.FileVersion] = []
         self._build()
@@ -83,10 +83,10 @@ class FileHistoryDialog(QDialog):
         self._path_edit.setPlaceholderText("src/foo.py 或 README.md")
         self._path_edit.returnPressed.connect(self._reload_versions)
         path_row.addWidget(self._path_edit, 1)
-        browse_btn = SecondaryButton("📂 浏览…")
+        browse_btn = SecondaryButton("浏览…", icon_key="browse")
         browse_btn.clicked.connect(self._browse_file)
         path_row.addWidget(browse_btn)
-        reload_btn = SecondaryButton("🔄 加载历史")
+        reload_btn = SecondaryButton("加载历史", icon_key="refresh")
         reload_btn.clicked.connect(self._reload_versions)
         path_row.addWidget(reload_btn)
         outer.addLayout(path_row)
@@ -129,7 +129,7 @@ class FileHistoryDialog(QDialog):
         self._hint = QLabel("")
         self._hint.setObjectName("Dim")
         btn_row.addWidget(self._hint, 1)
-        self._restore_btn = PrimaryButton("⏮ 恢复这个版本到项目")
+        self._restore_btn = PrimaryButton("恢复这个版本到项目")
         self._restore_btn.clicked.connect(self._on_restore)
         self._restore_btn.setEnabled(False)
         btn_row.addWidget(self._restore_btn)
@@ -177,13 +177,15 @@ class FileHistoryDialog(QDialog):
 
         for v in self._versions:
             p = v.point
-            emoji = _KIND_EMOJI.get(p.kind, "•")
             kind_zh = _KIND_LABEL_ZH.get(p.kind, p.kind)
             text = (
-                f"{emoji}  {_fmt_when(p.when)}  [{kind_zh}]  "
+                f"{_fmt_when(p.when)}  [{kind_zh}]  "
                 f"{p.label}   ·   {_fmt_size(v.size)}"
             )
             item = QListWidgetItem(text)
+            ikey = _KIND_ICON_KEY.get(p.kind)
+            if ikey:
+                item.setIcon(icons.icon(ikey, color="#A1A1AA"))
             item.setData(Qt.UserRole, v)
             self._versions_list.addItem(item)
         self._hint.setText(f"找到 {len(self._versions)} 个版本")
@@ -226,7 +228,7 @@ class FileHistoryDialog(QDialog):
             return
         text, is_binary = _decode_text(data)
         self._right_title.setText(
-            f"{_KIND_EMOJI.get(v.point.kind,'•')}  "
+            f"  "
             f"{_KIND_LABEL_ZH.get(v.point.kind, v.point.kind)}  "
             f"{v.point.label}  ·  {_fmt_when(v.point.when)}  ·  {_fmt_size(v.size)}"
         )
@@ -295,7 +297,7 @@ class FileHistoryDialog(QDialog):
         ok = dialogs.confirm(
             self, "恢复这个版本？",
             f"将把项目里的 {rel} 文件覆写为：\n\n"
-            f"  {_KIND_EMOJI.get(v.point.kind,'•')} "
+            f"  "
             f"[{_KIND_LABEL_ZH.get(v.point.kind, v.point.kind)}] "
             f"{v.point.label}（{_fmt_when(v.point.when)}）\n\n"
             "覆写前会自动把当前文件备份到 备份位置\\snapshots\\_restore_safety\\<项目>\\files\\，"

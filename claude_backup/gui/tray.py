@@ -7,7 +7,7 @@ from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtGui import QAction, QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QMenu, QSystemTrayIcon
 
-from . import i18n
+from . import i18n, icons
 from .assets import tray_pixmap
 from .. import config, core, git_ops, paths, registry
 from .workers import run_async
@@ -61,24 +61,28 @@ class TrayController(QObject):
         self._icon.show()
 
     def _build_menu(self):
-        self._open_act = QAction(i18n.TRAY_OPEN, self)
+        self._open_act = QAction(icons.icon("about", color="#525252"), i18n.TRAY_OPEN, self)
         self._open_act.triggered.connect(self.request_open_window.emit)
         self._menu.addAction(self._open_act)
 
-        self._backup_here_act = QAction(i18n.TRAY_BACKUP_HERE, self)
+        self._backup_here_act = QAction(icons.icon("backup-now", color="#525252"),
+                                        i18n.TRAY_BACKUP_HERE, self)
         self._backup_here_act.triggered.connect(self._backup_cwd)
         self._menu.addAction(self._backup_here_act)
 
-        self._backup_all_act = QAction(i18n.TRAY_BACKUP_ALL, self)
+        self._backup_all_act = QAction(icons.icon("backup-now", color="#525252"),
+                                       i18n.TRAY_BACKUP_ALL, self)
         self._backup_all_act.triggered.connect(self._backup_all)
         self._menu.addAction(self._backup_all_act)
 
         # 项目状态摘要子菜单 — 内容在 aboutToShow 时刷新
-        self._status_submenu = self._menu.addMenu("📊 项目状态")
+        self._status_submenu = self._menu.addMenu(icons.icon("kind-commit", color="#525252"),
+                                                  "项目状态")
 
         self._menu.addSeparator()
 
-        self._open_nas_act = QAction(i18n.TRAY_OPEN_NAS, self)
+        self._open_nas_act = QAction(icons.icon("open-folder", color="#525252"),
+                                     i18n.TRAY_OPEN_NAS, self)
         self._open_nas_act.triggered.connect(self._open_nas_root)
         self._menu.addAction(self._open_nas_act)
 
@@ -87,17 +91,20 @@ class TrayController(QObject):
         self._menu.addAction(self._toggle_pause_act)
         self._refresh_pause_label()
 
-        self._logs_act = QAction(i18n.TRAY_VIEW_LOGS, self)
+        self._logs_act = QAction(icons.icon("logs", color="#525252"),
+                                 i18n.TRAY_VIEW_LOGS, self)
         self._logs_act.triggered.connect(self.request_show_logs.emit)
         self._menu.addAction(self._logs_act)
 
         self._menu.addSeparator()
 
-        self._about_act = QAction(i18n.TRAY_ABOUT, self)
+        self._about_act = QAction(icons.icon("about", color="#525252"),
+                                  i18n.TRAY_ABOUT, self)
         self._about_act.triggered.connect(self._show_about)
         self._menu.addAction(self._about_act)
 
-        self._quit_act = QAction(i18n.TRAY_QUIT, self)
+        self._quit_act = QAction(icons.icon("quit", color="#525252"),
+                                 i18n.TRAY_QUIT, self)
         self._quit_act.triggered.connect(self.request_quit.emit)
         self._menu.addAction(self._quit_act)
 
@@ -116,7 +123,9 @@ class TrayController(QObject):
             self._status_submenu.addAction(empty)
             return
 
-        dot = {"healthy": "🟢", "changes": "🟡", "missing": "🔴", "never": "⚪"}
+        # 状态点用矢量图标 + 颜色区分（替代原 emoji 🟢🟡🔴⚪）
+        dot_color = {"healthy": "#34D399", "changes": "#FBBF24",
+                     "missing": "#F87171", "never": "#A1A1AA"}
         for entry in reg.projects[:30]:  # 防止项目特别多时菜单过长
             kind = "missing"
             sub_text = ""
@@ -134,7 +143,8 @@ class TrayController(QObject):
                 kind = "missing"
             if entry.last_backup_at:
                 sub_text = f"  ·  {entry.last_backup_at[:16].replace('T', ' ')}"
-            act = QAction(f"{dot.get(kind, '⚪')}  {entry.name}{sub_text}", self)
+            ic = icons.icon("dot-" + kind, color=dot_color.get(kind, "#A1A1AA"))
+            act = QAction(ic, f"{entry.name}{sub_text}", self)
             # 点项目 → 打开主窗口
             act.triggered.connect(self.request_open_window.emit)
             self._status_submenu.addAction(act)

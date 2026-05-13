@@ -3,14 +3,14 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Callable
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, QSize, Signal
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QFrame, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QVBoxLayout,
     QWidget,
 )
 
-from . import i18n
+from . import i18n, icons
 from .. import registry
 
 
@@ -45,28 +45,46 @@ def make_separator() -> QFrame:
 
 
 class PrimaryButton(QPushButton):
-    def __init__(self, text: str, parent: QWidget | None = None):
+    def __init__(self, text: str, parent: QWidget | None = None,
+                 icon_key: str | None = None):
         super().__init__(text, parent)
         self.setObjectName("PrimaryBtn")
         self.setCursor(Qt.PointingHandCursor)
+        if icon_key:
+            self.setIcon(icons.icon(icon_key, color="#FFFFFF"))
+            self.setIconSize(QSize(16, 16))
 
 
 class SecondaryButton(QPushButton):
-    def __init__(self, text: str, parent: QWidget | None = None):
+    def __init__(self, text: str, parent: QWidget | None = None,
+                 icon_key: str | None = None):
         super().__init__(text, parent)
         self.setObjectName("SecondaryBtn")
         self.setCursor(Qt.PointingHandCursor)
+        if icon_key:
+            self.setIcon(icons.icon(icon_key, color="#A1A1AA"))
+            self.setIconSize(QSize(16, 16))
 
 
 class IconButton(QPushButton):
-    """方形图标按钮 — 顶栏紧凑场景用，给一个 unicode 符号 + tooltip."""
+    """方形图标按钮 — 顶栏紧凑场景用。glyph 可以是 emoji（向后兼容）或 icons key。
+
+    用 icons key（如 "settings" / "help"）会用 qtawesome 矢量图标；
+    传字符串如果不在 icons.ICON_MAP 里就当作文字 glyph 显示（兼容老调用）。
+    """
 
     def __init__(self, glyph: str, tooltip: str = "",
                  parent: QWidget | None = None):
-        super().__init__(glyph, parent)
+        super().__init__("", parent)
         self.setObjectName("IconBtn")
         self.setCursor(Qt.PointingHandCursor)
-        self.setFixedSize(40, 40)
+        self.setFixedSize(36, 36)
+        if glyph in icons.ICON_MAP:
+            self.setIcon(icons.icon(glyph, color="#A1A1AA"))
+            self.setIconSize(QSize(18, 18))
+        else:
+            # 老的 emoji / 文字 glyph 路径，向后兼容
+            self.setText(glyph)
         if tooltip:
             self.setToolTip(tooltip)
 
@@ -161,25 +179,44 @@ class ProjectCardButton(QPushButton):
 
 
 class ActionCardButton(QPushButton):
-    """右侧 4 个大动作按钮：图标 + 标题 + 一行说明."""
-    def __init__(self, title: str, desc: str, parent: QWidget | None = None):
+    """右侧 4 个大动作按钮：左侧矢量图标 + 右侧 标题 + 一行说明。
+
+    icon_key 是 icons.ICON_MAP 里的 key（如 "backup-now"），左侧画 24px 图标。
+    传 None 则只有文字（兼容旧调用）。
+    """
+    def __init__(self, title: str, desc: str,
+                 icon_key: str | None = None,
+                 parent: QWidget | None = None):
         super().__init__(parent)
         self.setObjectName("ActionCard")
         self.setCursor(Qt.PointingHandCursor)
-        self.setMinimumHeight(80)
+        self.setMinimumHeight(88)
 
-        lay = QVBoxLayout(self)
-        lay.setContentsMargins(18, 14, 18, 14)
-        lay.setSpacing(4)
+        outer = QHBoxLayout(self)
+        outer.setContentsMargins(18, 16, 18, 16)
+        outer.setSpacing(14)
+
+        if icon_key:
+            ic = QLabel()
+            ic.setPixmap(icons.icon(icon_key, color="#E5E5E5").pixmap(24, 24))
+            ic.setFixedSize(28, 28)
+            ic.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+            outer.addWidget(ic, 0, Qt.AlignTop)
+
+        text_col = QVBoxLayout()
+        text_col.setContentsMargins(0, 0, 0, 0)
+        text_col.setSpacing(4)
 
         t = QLabel(title)
         t.setObjectName("H3")
-        lay.addWidget(t)
+        text_col.addWidget(t)
 
         d = QLabel(desc)
         d.setObjectName("Dim")
         d.setWordWrap(True)
-        lay.addWidget(d)
+        text_col.addWidget(d)
+
+        outer.addLayout(text_col, 1)
 
 
 class StatRow(QFrame):

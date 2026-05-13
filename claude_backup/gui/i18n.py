@@ -29,11 +29,11 @@ APP_NAME = "ClaudeBackup"
 APP_TAGLINE = "把代码自动备份到本地备份盘和 GitHub，再也不用担心丢失"
 
 # 顶部栏
-TOPBAR_HELP = "❓ 帮助"
-TOPBAR_SETTINGS = "⚙️ 设置"
+TOPBAR_HELP = "帮助"
+TOPBAR_SETTINGS = "设置"
 
 # 左侧
-LEFT_ADD_PROJECT = "➕ 添加项目"
+LEFT_ADD_PROJECT = "添加项目"
 LEFT_NO_PROJECTS = "还没有项目"
 LEFT_NO_PROJECTS_HINT = "点下方按钮添加你的第一个项目"
 
@@ -53,13 +53,13 @@ DETAIL_RELEASE_COUNT = "已发布版本"
 DETAIL_TIMELINE = "备份时间线"
 
 # 右侧操作
-ACTION_BACKUP_NOW = "📸 立即备份"
+ACTION_BACKUP_NOW = "立即备份"
 ACTION_BACKUP_NOW_DESC = "把整个项目完整备份一份（含未保存的修改）"
-ACTION_RELEASE = "🚀 发布版本"
+ACTION_RELEASE = "发布版本"
 ACTION_RELEASE_DESC = "把这个版本上传到 GitHub，作为重要发布"
-ACTION_COMPARE = "🔍 对比版本"
+ACTION_COMPARE = "对比版本"
 ACTION_COMPARE_DESC = "看看两个备份之间改了什么"
-ACTION_LIST = "⏱ 时间机器"
+ACTION_LIST = "时间机器"
 ACTION_LIST_DESC = "拖滑块回到任意时刻 — 看那时的内容 / 一键恢复"
 
 # 底部状态栏
@@ -68,9 +68,9 @@ STATUS_LAST_AUTO = "最近一次备份"
 STATUS_TOTAL_SIZE = "备份位置占用"
 
 # 通知
-NOTIFY_BACKUP_OK = "✅ 已备份 {name} — 时间快照已保存"
-NOTIFY_BACKUP_FAIL = "⚠️ {name} 备份失败 — 点击查看原因"
-NOTIFY_RELEASE_OK = "🚀 已发布 {name} {version}"
+NOTIFY_BACKUP_OK = "已备份 {name} — 时间快照已保存"
+NOTIFY_BACKUP_FAIL = "{name} 备份失败 — 点击查看原因"
+NOTIFY_RELEASE_OK = "已发布 {name} {version}"
 
 # 对话框
 DIALOG_REGISTER_TITLE = "添加项目"
@@ -98,12 +98,12 @@ BTN_OPEN_LOG = "查看日志"
 # ---------- 托盘菜单 ----------
 
 TRAY_OPEN = "打开主面板"
-TRAY_BACKUP_HERE = "📸 备份当前文件夹"
-TRAY_BACKUP_ALL = "📸 备份所有项目"
-TRAY_OPEN_NAS = "📂 打开备份位置"
+TRAY_BACKUP_HERE = "备份当前文件夹"
+TRAY_BACKUP_ALL = "备份所有项目"
+TRAY_OPEN_NAS = "打开备份位置"
 TRAY_PAUSE_DAILY = "暂停每日自动备份"
 TRAY_RESUME_DAILY = "恢复每日自动备份"
-TRAY_VIEW_LOGS = "📁 打开日志文件夹"
+TRAY_VIEW_LOGS = "打开日志文件夹"
 TRAY_ABOUT = f"关于 {APP_NAME}"
 TRAY_QUIT = "退出"
 TRAY_TOOLTIP = APP_NAME
@@ -124,13 +124,13 @@ ONBOARD_CONCEPT_RELEASE = "重要版本一键发布到 GitHub（你来点）"
 
 ONBOARD_PICK_TITLE = "添加你的第一个项目"
 ONBOARD_PICK_BODY = "选一个你正在开发的项目文件夹，我会帮你把备份配好。"
-ONBOARD_PICK_BTN = "📁 选一个项目文件夹"
+ONBOARD_PICK_BTN = "选一个项目文件夹"
 
 ONBOARD_TRY_TITLE = "做一次试试看"
 ONBOARD_TRY_BODY = "点这个按钮，我现在就给你做一次完整备份（含目录拷贝 + git 历史）。"
-ONBOARD_TRY_BTN = "📸 现在试一次备份"
+ONBOARD_TRY_BTN = "现在试一次备份"
 
-ONBOARD_DONE_TITLE = "🎉 一切就绪"
+ONBOARD_DONE_TITLE = "一切就绪"
 ONBOARD_DONE_BODY = (
     "以后你只需要在重要节点点一下 \"发布版本\"，其它的我都会帮你做好。\n\n"
     "三个常用入口：\n"

@@ -157,19 +157,19 @@ class MainWindow(QMainWindow):
 
         lay.addStretch()
 
-        health_btn = IconButton("🩺", tooltip="健康检查 — 扫所有项目找隐患")
+        health_btn = IconButton("health", tooltip="健康检查 — 扫所有项目找隐患")
         health_btn.clicked.connect(self._show_health_check)
         lay.addWidget(health_btn)
 
-        about_btn = IconButton("ⓘ", tooltip="关于 ClaudeBackup")
+        about_btn = IconButton("about", tooltip="关于 ClaudeBackup")
         about_btn.clicked.connect(self._show_about)
         lay.addWidget(about_btn)
 
-        help_btn = IconButton("?", tooltip="帮助 / 重看引导")
+        help_btn = IconButton("help", tooltip="帮助 / 重看引导")
         help_btn.clicked.connect(self._show_help)
         lay.addWidget(help_btn)
 
-        settings_btn = IconButton("⚙", tooltip="设置")
+        settings_btn = IconButton("settings", tooltip="设置")
         settings_btn.clicked.connect(self._show_settings)
         lay.addWidget(settings_btn)
 
@@ -206,7 +206,7 @@ class MainWindow(QMainWindow):
         scroll.setWidget(self._project_list_widget)
         lay.addWidget(scroll, 1)
 
-        self._add_btn = PrimaryButton(i18n.LEFT_ADD_PROJECT)
+        self._add_btn = PrimaryButton(i18n.LEFT_ADD_PROJECT, icon_key="add")
         self._add_btn.clicked.connect(self.action_register)
         lay.addWidget(self._add_btn)
 
@@ -238,7 +238,7 @@ class MainWindow(QMainWindow):
         self._detail_github = QLabel("")
         self._detail_github.setObjectName("Dim")
         gh_row.addWidget(self._detail_github, 1)
-        self._btn_config_gh = SecondaryButton("⚙️ 配置 GitHub")
+        self._btn_config_gh = SecondaryButton("配置 GitHub", icon_key="settings")
         self._btn_config_gh.clicked.connect(self.action_configure_github)
         gh_row.addWidget(self._btn_config_gh)
         self._detail_card.addLayout(gh_row)
@@ -255,7 +255,7 @@ class MainWindow(QMainWindow):
         timeline_label = QLabel(i18n.DETAIL_TIMELINE)
         timeline_label.setObjectName("H3")
         tl_row.addWidget(timeline_label, 1)
-        self._btn_file_history = SecondaryButton("📄 按文件查看历史")
+        self._btn_file_history = SecondaryButton("按文件查看历史", icon_key="file-history")
         self._btn_file_history.setToolTip(
             "选项目里的某个文件 → 看它每次备份的版本，可对比 / 单文件恢复"
         )
@@ -285,10 +285,14 @@ class MainWindow(QMainWindow):
         title.setObjectName("Dim")
         lay.addWidget(title)
 
-        self._btn_backup = ActionCardButton(i18n.ACTION_BACKUP_NOW, i18n.ACTION_BACKUP_NOW_DESC)
-        self._btn_release = ActionCardButton(i18n.ACTION_RELEASE, i18n.ACTION_RELEASE_DESC)
-        self._btn_compare = ActionCardButton(i18n.ACTION_COMPARE, i18n.ACTION_COMPARE_DESC)
-        self._btn_list = ActionCardButton(i18n.ACTION_LIST, i18n.ACTION_LIST_DESC)
+        self._btn_backup = ActionCardButton(i18n.ACTION_BACKUP_NOW, i18n.ACTION_BACKUP_NOW_DESC,
+                                            icon_key="backup-now")
+        self._btn_release = ActionCardButton(i18n.ACTION_RELEASE, i18n.ACTION_RELEASE_DESC,
+                                             icon_key="release")
+        self._btn_compare = ActionCardButton(i18n.ACTION_COMPARE, i18n.ACTION_COMPARE_DESC,
+                                             icon_key="compare")
+        self._btn_list = ActionCardButton(i18n.ACTION_LIST, i18n.ACTION_LIST_DESC,
+                                          icon_key="timeline")
 
         self._btn_backup.clicked.connect(self.action_backup)
         self._btn_release.clicked.connect(self.action_release)
@@ -301,7 +305,7 @@ class MainWindow(QMainWindow):
         lay.addStretch()
 
         # 危险区：删除项目（视觉降权）
-        self._btn_delete = SecondaryButton("🗑 删除此项目")
+        self._btn_delete = SecondaryButton("删除此项目", icon_key="delete")
         self._btn_delete.setToolTip(
             "把这个项目从备份列表移除（不会删本地文件夹；备份位置里的数据可选是否一起清）"
         )
@@ -416,14 +420,14 @@ class MainWindow(QMainWindow):
         if e is None:
             return
         self._detail_title.setText(e.name)
-        self._detail_path.setText(f"📁  {e.path}")
+        self._detail_path.setText(e.path)
 
         # GitHub 状态
         if e.github_url:
-            self._detail_github.setText(f"🐙 GitHub：{e.github_url}")
+            self._detail_github.setText(f"GitHub：{e.github_url}")
             self._detail_github.setToolTip(e.github_url)
         else:
-            self._detail_github.setText("🐙 GitHub：未配置（发布版本只会上传到本地备份位置）")
+            self._detail_github.setText("GitHub：未配置（发布版本只会上传到本地备份位置）")
             self._detail_github.setToolTip("")
 
         # 统计
@@ -718,8 +722,8 @@ class MainWindow(QMainWindow):
                 f"GitHub 上传：{'✅' if res.pushed_to_github else '⏭️'}\n"
                 f"归档快照：{res.bundle_path}"
             )
-            dialogs.info(self, "🚀 发布完成", msg)
-            self._notify(f"🚀 已发布 {res.project_name} {res.version}",
+            dialogs.info(self, "发布完成", msg)
+            self._notify(f"已发布 {res.project_name} {res.version}",
                          f"备份位置:{res.pushed_to_nas} GitHub:{res.pushed_to_github}", "info")
             self._refresh_detail()
 

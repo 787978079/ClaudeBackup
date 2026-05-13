@@ -136,7 +136,7 @@ class TimelineDialog(QDialog):
 
         # 底部按钮
         btns = QHBoxLayout()
-        self._open_btn = SecondaryButton("📂 在备份位置打开这个版本")
+        self._open_btn = SecondaryButton("在备份位置打开这个版本", icon_key="folder-open")
         self._open_btn.clicked.connect(self._on_open)
         btns.addWidget(self._open_btn)
         btns.addStretch()
@@ -164,7 +164,7 @@ class TimelineDialog(QDialog):
         if p is None:
             return
         # 只剩目录快照，所有按钮恒启用
-        self._info_title.setText(f"📁  [目录快照]   {p.label}")
+        self._info_title.setText(f"[目录快照]   {p.label}")
         when = p.when.strftime("%Y-%m-%d %H:%M:%S") if p.when else "—"
         self._info_when.setText(f"时间：{when}")
         self._info_detail.setText(p.detail)

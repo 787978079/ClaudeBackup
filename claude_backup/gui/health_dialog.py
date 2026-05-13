@@ -77,7 +77,7 @@ class _IssueRow(QFrame):
         top.addWidget(title, 1)
 
         if issue.project:
-            proj_lb = QLabel(f"📁 {issue.project}")
+            proj_lb = QLabel(issue.project)
             proj_lb.setObjectName("Mini")
             top.addWidget(proj_lb)
 
@@ -104,14 +104,14 @@ class HealthCheckDialog(QDialog):
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
-        self.setWindowTitle("🩺 健康检查")
+        self.setWindowTitle("健康检查")
         self.setMinimumSize(720, 560)
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(24, 20, 24, 20)
         outer.setSpacing(14)
 
-        title = QLabel("🩺 健康检查")
+        title = QLabel("健康检查")
         title.setObjectName("H1")
         outer.addWidget(title)
 

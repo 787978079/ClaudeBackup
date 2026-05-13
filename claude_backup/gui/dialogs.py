@@ -11,18 +11,18 @@ from PySide6.QtWidgets import (
     QVBoxLayout, QWidget,
 )
 
-from . import i18n
+from . import i18n, icons
 from .widgets import PrimaryButton, SecondaryButton, make_label
 
 if TYPE_CHECKING:
     from .. import core
 
 
-_KIND_EMOJI = {
-    "commit": "🔵",
-    "bundle": "🟢",
-    "dir_snapshot": "📁",
-    "release": "⭐",
+_KIND_ICON_KEY = {
+    "commit": "kind-commit",
+    "bundle": "kind-bundle",
+    "dir_snapshot": "kind-dir-snapshot",
+    "release": "kind-release",
 }
 _KIND_LABEL = {
     "commit": "提交",
@@ -39,16 +39,17 @@ def _fmt_when(when: datetime | None) -> str:
 
 
 def _make_point_item(point: "core.BackupPoint") -> QListWidgetItem:
-    """渲染一个 BackupPoint 为 ListWidget 行."""
-    emoji = _KIND_EMOJI.get(point.kind, "•")
+    """渲染一个 BackupPoint 为 ListWidget 行：左侧矢量图标 + 文字。"""
     kind_text = _KIND_LABEL.get(point.kind, point.kind)
     when = _fmt_when(point.when)
     detail = point.detail
-    # 截断很长的 detail
     if len(detail) > 60:
         detail = detail[:57] + "…"
-    text = f"{emoji}  {when}    [{kind_text}]   {point.label}   —  {detail}"
+    text = f"{when}    [{kind_text}]   {point.label}   —  {detail}"
     item = QListWidgetItem(text)
+    ikey = _KIND_ICON_KEY.get(point.kind)
+    if ikey:
+        item.setIcon(icons.icon(ikey, color="#A1A1AA"))
     item.setData(Qt.UserRole, point)
     item.setToolTip(f"[{kind_text}] {point.label}\n{when}\n{point.detail}")
     return item

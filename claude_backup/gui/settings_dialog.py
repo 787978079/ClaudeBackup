@@ -135,14 +135,14 @@ class SettingsDialog(QDialog):
 
         # ---------- 备份位置 ----------
         lay.addWidget(make_separator())
-        lay.addWidget(make_label("📂 备份位置", "H3"))
+        lay.addWidget(make_label("备份位置", "H3"))
         loc_row = QHBoxLayout()
         cur_root = paths._resolve_nas_root()
         self._loc_label = QLabel(str(cur_root) if cur_root else "（未配置）")
         self._loc_label.setObjectName("Body")
         self._loc_label.setWordWrap(True)
         loc_row.addWidget(self._loc_label, 1)
-        test_btn = SecondaryButton("🧪 测试")
+        test_btn = SecondaryButton("测试", icon_key="test")
         test_btn.setToolTip("测试备份位置是否可读可写 + 显示可用空间")
         test_btn.clicked.connect(self._on_test_location)
         loc_row.addWidget(test_btn)
@@ -185,7 +185,7 @@ class SettingsDialog(QDialog):
 
         self._row_ctx = _IntegrationRow(
             self,
-            "📂 资源管理器右键菜单",
+            "资源管理器右键菜单",
             "在文件夹上右键能直接看到 ClaudeBackup 子菜单",
             si.context_menu_installed,
             si.install_context_menu,
@@ -195,7 +195,7 @@ class SettingsDialog(QDialog):
 
         self._row_auto = _IntegrationRow(
             self,
-            "🚀 登录时自启托盘",
+            "登录时自启托盘",
             "下次登录 Windows 会自动启动托盘图标",
             si.autostart_installed,
             si.install_autostart,
@@ -205,7 +205,7 @@ class SettingsDialog(QDialog):
 
         self._row_task = _IntegrationRow(
             self,
-            "⏰ 每日定时备份（Windows 任务计划）",
+            "每日定时备份（Windows 任务计划）",
             f"每天在上方设置的时间自动跑一次备份（当前 {self._cfg.schedule_time}）",
             si.task_scheduler_installed,
             lambda: si.install_task_scheduler(self._current_time_str()),

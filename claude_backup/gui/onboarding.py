@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QScrollArea, QStackedWidget, QVBoxLayout, QWidget,
 )
 
-from . import dialogs, i18n
+from . import dialogs, i18n, icons
 from .assets import app_icon
 from .widgets import (
     Card, PrimaryButton, SecondaryButton, make_label, make_separator,
@@ -92,15 +92,16 @@ class _ConceptStep(_Step):
         cards = QHBoxLayout()
         cards.setSpacing(16)
 
-        for emoji, text in (
-            ("🤖", i18n.ONBOARD_CONCEPT_AUTO),
-            ("⏰", i18n.ONBOARD_CONCEPT_DAILY),
-            ("🚀", i18n.ONBOARD_CONCEPT_RELEASE),
+        # 三个概念卡的左侧大图标用 qtawesome，替代原 🤖⏰🚀 emoji
+        for ikey, text in (
+            ("fa6s.wand-magic-sparkles", i18n.ONBOARD_CONCEPT_AUTO),
+            ("fa6s.clock", i18n.ONBOARD_CONCEPT_DAILY),
+            ("fa6s.rocket", i18n.ONBOARD_CONCEPT_RELEASE),
         ):
             card = Card()
-            big = QLabel(emoji)
+            big = QLabel()
+            big.setPixmap(icons.icon(ikey, color="#A78BFA").pixmap(56, 56))
             big.setAlignment(Qt.AlignCenter)
-            big.setStyleSheet("font-size: 56px;")
             card.addWidget(big)
             txt = QLabel(text)
             txt.setObjectName("Body")
@@ -129,7 +130,7 @@ class _BackupLocationStep(_Step):
         lay.setContentsMargins(40, 32, 40, 32)
         lay.setSpacing(14)
 
-        title = QLabel("📂 选一个备份位置")
+        title = QLabel("选一个备份位置")
         title.setObjectName("H1")
         title.setAlignment(Qt.AlignCenter)
         lay.addWidget(title)
@@ -145,7 +146,7 @@ class _BackupLocationStep(_Step):
         body.setTextFormat(Qt.MarkdownText)
         lay.addWidget(body)
 
-        self._pick_btn = PrimaryButton("📂 选择备份位置")
+        self._pick_btn = PrimaryButton("选择备份位置", icon_key="folder-open")
         self._pick_btn.setMinimumHeight(48)
         self._pick_btn.setStyleSheet("font-size: 16px; padding: 12px 24px;")
         self._pick_btn.clicked.connect(self._do_pick)
@@ -533,7 +534,7 @@ class _IntegrationStep(_Step):
         lay.setContentsMargins(40, 32, 40, 32)
         lay.setSpacing(14)
 
-        title = QLabel("⚙️ 系统集成（推荐全开）")
+        title = QLabel("系统集成（推荐全开）")
         title.setObjectName("H1")
         title.setAlignment(Qt.AlignCenter)
         lay.addWidget(title)
@@ -572,15 +573,15 @@ class _IntegrationStep(_Step):
         # (key, 标题, 说明, install_fn, check_fn)
         return [
             ("ctx",
-             "📂 资源管理器右键菜单",
+             "资源管理器右键菜单",
              "在文件夹上右键能直接看到 ClaudeBackup 子菜单",
              si.install_context_menu, si.context_menu_installed),
             ("auto",
-             "🚀 登录时自启托盘",
+             "登录时自启托盘",
              "下次登录 Windows 自动启动托盘图标，备份完弹通知",
              si.install_autostart, si.autostart_installed),
             ("task",
-             "⏰ 每日定时备份 (23:30)",
+             "每日定时备份 (23:30)",
              "每晚扫描所有项目，仅在有变化时备份",
              lambda: si.install_task_scheduler("23:30"), si.task_scheduler_installed),
         ]
