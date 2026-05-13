@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.2.3 — 2026-05-13
+
+根治"卡片矩形蒙版"视觉问题。
+
+### 🎨 视觉（接 v0.2.2 未完成的扁平化）
+
+v0.2.2 删了 1px 暗色 border 但卡片仍用 `surface (#1A1A1F)` 填充浮在 page `bg (#0E0E10)` 上，肉眼能看出"透明度更低的矩形蒙版"（用户精确诊断）。light 主题下 `surface=#FFFFFF` vs `bg=#FAFAFA` 同样有微差。
+
+- **卡片填充全部改 `transparent`**：`QFrame#Card` / `QPushButton#ActionCard` / `QListWidget/Tree/Table` 的 `background-color` 从 `surface` → `transparent`。卡片彻底融进 page bg，靠间距和 H1/H3 标题区分层次。
+- **全局 `QLabel { background: transparent }`**：默认 `QWidget {{ bg }}` 通配规则会染所有 QLabel 成 page bg 色，嵌在 hover 卡片等有 bg 填充的容器里时会显出"QLabel 内部矩形蒙版"（用户图 #11 直接观察到）。强制 transparent 让 QLabel 只画文字。
+- **ActionCard hover 反馈保留**：hover 时仍显 `surface_hover` 填充作为悬停反馈 — hover 是临时主动状态，不形成静态框感。
+
+### 兼容性
+
+- 纯视觉改动。配置/registry/备份数据完全兼容 v0.2.x。
+
+---
+
 ## v0.2.2 — 2026-05-13
 
 UI 视觉扁平化：删除装饰性 1px 暗描边。
