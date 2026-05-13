@@ -71,6 +71,7 @@ python -m PyInstaller `
     --name 'ClaudeBackup' `
     --paths . `
     --collect-all PySide6 `
+    --collect-all qtawesome `
     --add-data 'claude_backup/gui/assets;claude_backup/gui/assets' `
     @addDataArgs `
     --icon $iconFile `
@@ -86,6 +87,7 @@ python -m PyInstaller `
     --name 'ClaudeBackup-cli' `
     --paths . `
     --collect-all PySide6 `
+    --collect-all qtawesome `
     @addDataArgs `
     --icon $iconFile `
     --version-file $versionFile `

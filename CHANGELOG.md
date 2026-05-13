@@ -2,17 +2,34 @@
 
 ## v0.2.4 — 2026-05-13
 
-修 v0.2.3 删 surface fill 后引入的 timeline 文字挤兑。
+UI 大改：emoji 全面替换为矢量图标 + timeline 文字间距修复。
 
-### 🐛 修复
+### 🎨 全局 emoji → qtawesome 矢量图标（参考 Prompt help 设计哲学）
 
-- **timeline 行内 + 行间间距撑开**：v0.2.3 把 `QListWidget` 背景改 transparent 后，原本 surface 色块的"上下 padding 视觉缓冲"消失了。加上 Qt 经典坑 `QListWidget::item { padding }` 在 `setItemWidget` 模式下被忽略 → 每行 timestamp/hash 紧贴 detail，相邻 row 也紧贴成一坨。
-  - `TimelineRow` `lay.setContentsMargins` 上下 6 → 12（row 自身上下 padding 撑开）
-  - `col.setSpacing` 2 → 6（timestamp 行 和 detail 行之间留白）
+用户反馈 emoji 当 UI 图标"太丑"。参考 `Prompt help` 项目用 `qtawesome` (Font Awesome 6 Solid) 完全替代 emoji 图标。
+
+- **新增** `claude_backup/gui/icons.py` — 50+ semantic key 映射到 fa6s/fa6b 矢量图标，统一封装 qtawesome 调用
+- **新依赖** `qtawesome>=1.4`（已加 `pyproject.toml`）
+- **替换覆盖整个 GUI**：
+  - 顶栏 4 个 IconButton：🩺ⓘ❓⚙ → fa6s heart-pulse/info/question/gear
+  - 右侧 4 个 ActionCard：📸🚀🔍⏱ → fa6s camera/rocket/code-compare/clock-rotate-left
+  - 主面板按钮：📄📁📂🗑➕⚙️ → 矢量
+  - 备份点列表（CompareDialog / FileHistoryDialog）：🔵🟢📁⭐ → fa6s code-commit/box-archive/folder-tree/star
+  - 托盘菜单：📊📂📁 → 矢量；项目状态点 🟢🟡🔴⚪ → fa6s circle 不同颜色
+  - 设置/onboarding/timeline/health_dialog：🧪🚀⏰🤖📁🩺 → 矢量 / 纯文字
+- **保留** 状态文字的 unicode 几何符号（✓⏳●⚠ 在 STATUS_HEALTHY 等），跟 Prompt help 的 ✓ 已完成 标记同模式
+- **PyInstaller spec** 加 `--collect-all qtawesome` 确保字体打进 bundle
+
+### 🐛 timeline 文字挤兑修复
+
+v0.2.3 把 `QListWidget` 背景改 transparent 后，原本 surface 色块的"上下 padding 视觉缓冲"消失了。加上 Qt 经典坑 `QListWidget::item { padding }` 在 `setItemWidget` 模式下被忽略 → 每行 timestamp/hash 紧贴 detail，相邻 row 也紧贴成一坨。
+
+- `TimelineRow` `lay.setContentsMargins` 上下 6 → 12（row 自身上下 padding 撑开）
+- `col.setSpacing` 2 → 6（timestamp 行 和 detail 行之间留白）
 
 ### 兼容性
 
-- 纯视觉改动。配置/registry/备份数据完全兼容 v0.2.x。
+- 纯视觉改动 + 1 个新依赖（qtawesome 已打进 setup.exe）。配置/registry/备份数据完全兼容 v0.2.x。
 
 ---
 
