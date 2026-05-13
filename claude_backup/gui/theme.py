@@ -72,15 +72,16 @@ QMainWindow, QDialog {{
 }}
 
 /* ---------- 卡片 ---------- */
+/* 不画 border：靠 surface 色和外层 bg 色的对比区分卡片边界；
+   原 1px solid border 在深色主题下表现为暗灰描边，用户反馈"框感"重。 */
 QFrame#Card {{
     background-color: {p.surface};
-    border: 1px solid {p.border};
+    border: none;
     border-radius: 14px;
     padding: 0px;
 }}
 QFrame#Card:hover {{
     background-color: {p.surface_hover};
-    border-color: {p.border_strong};
 }}
 
 QFrame#TopBar {{
@@ -168,10 +169,12 @@ QPushButton#DangerBtn:hover {{
 }}
 
 /* ---------- 大动作卡片按钮 ---------- */
+/* 默认 border: none，hover 时才显紫色描边作为悬停反馈；
+   原 1px 暗灰描边在静止状态形成肉眼可见的"框感"。 */
 QPushButton#ActionCard {{
     background-color: {p.surface};
     color: {p.text};
-    border: 1px solid {p.border};
+    border: 1px solid transparent;
     border-radius: 14px;
     padding: 18px 20px;
     text-align: left;
@@ -186,7 +189,7 @@ QPushButton#ActionCard:pressed {{
 QPushButton#ActionCard:disabled {{
     color: {p.text_dim};
     background-color: transparent;
-    border-color: {p.border};
+    border-color: transparent;
 }}
 QPushButton#ActionCard:disabled QLabel {{
     color: {p.text_dim};
@@ -290,9 +293,11 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{ height: 0; }}
 QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {{ background: transparent; }}
 
 /* ---------- 表格 / 列表 ---------- */
+/* 列表本身不画 border：列表通常嵌在 Card 内，再加 1px 描边会形成"卡中卡"的双层框感。
+   靠 surface 色和外层背景的差异区分边界。 */
 QListWidget, QTreeWidget, QTableWidget {{
     background-color: {p.surface};
-    border: 1px solid {p.border};
+    border: none;
     border-radius: 10px;
     outline: none;
 }}

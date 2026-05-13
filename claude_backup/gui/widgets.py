@@ -253,18 +253,13 @@ _TIMELINE_KIND_COLOR = {
     "dir_snapshot": "#A78BFA",   # 紫 — 目录快照
     "release":      "#FBBF24",   # 橙 — 发布
 }
-# Qt stylesheet 不识别 8 位 hex (#RRGGBBAA)，徽章背景/边框用 rgba() 显式
+# Qt stylesheet 不识别 8 位 hex (#RRGGBBAA)，徽章背景用 rgba() 显式
+# 加大透明度让背景填充更明显（原值 60→100），去掉 border 后靠背景色块即可辨识类型
 _TIMELINE_KIND_BG = {
-    "commit":       "rgba(113, 113, 122, 60)",
-    "bundle":       "rgba(52, 211, 153, 60)",
-    "dir_snapshot": "rgba(167, 139, 250, 60)",
-    "release":      "rgba(251, 191, 36, 60)",
-}
-_TIMELINE_KIND_BORDER = {
-    "commit":       "rgba(113, 113, 122, 140)",
-    "bundle":       "rgba(52, 211, 153, 140)",
-    "dir_snapshot": "rgba(167, 139, 250, 140)",
-    "release":      "rgba(251, 191, 36, 140)",
+    "commit":       "rgba(113, 113, 122, 100)",
+    "bundle":       "rgba(52, 211, 153, 100)",
+    "dir_snapshot": "rgba(167, 139, 250, 100)",
+    "release":      "rgba(251, 191, 36, 100)",
 }
 _TIMELINE_KIND_ZH = {
     "commit":       "提交",
@@ -312,11 +307,12 @@ class TimelineRow(QWidget):
 
         badge = QLabel(kind_zh)
         bg = _TIMELINE_KIND_BG.get(kind, _TIMELINE_KIND_BG["commit"])
-        bd = _TIMELINE_KIND_BORDER.get(kind, _TIMELINE_KIND_BORDER["commit"])
+        # 不画 border：原 1px solid rgba(140) 描边在小尺寸徽章上形成明显"文本框感"，
+        # 用户反馈每行被这些线框分隔得很碎。改用更浓的背景填充承担类型识别。
         badge.setStyleSheet(
             f"background-color: {bg};"
             f"color: {color};"
-            f"border: 1px solid {bd};"
+            "border: none;"
             "border-radius: 6px;"
             "padding: 2px 8px;"
             "font-size: 11px;"
