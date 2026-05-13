@@ -160,7 +160,7 @@ class SettingsDialog(QDialog):
 
         # ---------- 保留策略 ----------
         lay.addWidget(make_separator())
-        lay.addWidget(make_label("保留策略（避免 NAS 爆盘）", "H3"))
+        lay.addWidget(make_label("保留策略（避免备份盘爆盘）", "H3"))
         ret_form = QFormLayout()
         ret_form.setSpacing(8)
         self.keep_dir_edit = QLineEdit(str(self._cfg.retention_keep_last_dir_snapshots))

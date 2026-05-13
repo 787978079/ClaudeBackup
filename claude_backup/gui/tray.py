@@ -10,6 +10,7 @@ from PySide6.QtWidgets import QMenu, QSystemTrayIcon
 from . import i18n
 from .assets import tray_pixmap
 from .. import config, core, git_ops, paths, registry
+from .workers import run_async
 
 
 # 状态着色 — 在主图标右下角叠一个色点（busy=黄/ok=绿/error=红），idle 时不叠.
@@ -180,9 +181,10 @@ class TrayController(QObject):
             self.request_open_window.emit()
             return
 
+        # 异步：大项目同步备份要 10+ 秒，会冻结托盘菜单导致用户右键无反应
         self.set_status("busy")
-        try:
-            res = core.backup_project(cwd)
+
+        def _on_ok(res):
             self.set_status("ok")
             if res.bundle_path:
                 self.notify(
@@ -190,14 +192,21 @@ class TrayController(QObject):
                     f"快照：{res.bundle_path.name}",
                 )
             else:
-                self.notify(i18n.NOTIFY_BACKUP_OK.format(name=entry.name), "已上传 NAS")
-        except Exception as e:  # noqa: BLE001
+                self.notify(i18n.NOTIFY_BACKUP_OK.format(name=entry.name), "已上传备份位置")
+
+        def _on_err(msg: str):
             self.set_status("error")
             self.notify(
                 i18n.NOTIFY_BACKUP_FAIL.format(name=entry.name),
-                str(e),
+                msg,
                 level="error",
             )
+
+        t = run_async(self, core.backup_project, _on_ok, _on_err, str(cwd))
+        # 防 GC
+        if not hasattr(self, "_active_threads"):
+            self._active_threads = []
+        self._active_threads.append(t)
 
     def _backup_all(self):
         """遍历 registry 对所有项目跑一次备份."""
@@ -206,20 +215,37 @@ class TrayController(QObject):
             self.notify("还没有项目", "先在主面板「➕ 添加项目」。", level="warn")
             self.request_open_window.emit()
             return
+        # 异步：N 个项目顺序备份是分钟级，主线程跑会冻结整个托盘
         self.set_status("busy")
-        ok_count, fail_count = 0, 0
-        for entry in reg.projects:
-            try:
-                core.backup_project(entry.path)
-                ok_count += 1
-            except Exception:  # noqa: BLE001
-                fail_count += 1
-        self.set_status("ok" if fail_count == 0 else "error")
-        msg = f"成功 {ok_count} 个"
-        if fail_count:
-            msg += f"，失败 {fail_count} 个（详情见日志）"
-        self.notify("📸 全部项目备份完成", msg,
-                    level="info" if fail_count == 0 else "warn")
+        entries = list(reg.projects)
+
+        def _do_all():
+            ok, fail = 0, 0
+            for entry in entries:
+                try:
+                    core.backup_project(entry.path)
+                    ok += 1
+                except Exception:  # noqa: BLE001
+                    fail += 1
+            return ok, fail
+
+        def _on_ok(result):
+            ok_count, fail_count = result
+            self.set_status("ok" if fail_count == 0 else "error")
+            msg = f"成功 {ok_count} 个"
+            if fail_count:
+                msg += f"，失败 {fail_count} 个（详情见日志）"
+            self.notify("📸 全部项目备份完成", msg,
+                        level="info" if fail_count == 0 else "warn")
+
+        def _on_err(msg: str):
+            self.set_status("error")
+            self.notify("📸 批量备份异常中断", msg, level="error")
+
+        t = run_async(self, _do_all, _on_ok, _on_err)
+        if not hasattr(self, "_active_threads"):
+            self._active_threads = []
+        self._active_threads.append(t)
 
     def _open_nas_root(self):
         """打开 NAS 备份根目录（资源管理器）."""
@@ -233,7 +259,7 @@ class TrayController(QObject):
             self.request_open_window.emit()
             return
         if not root.exists():
-            self.notify("NAS 路径不可访问",
+            self.notify("备份位置不可访问",
                         f"{root} 现在打不开（盘没挂上？）", level="warn")
             return
         try:

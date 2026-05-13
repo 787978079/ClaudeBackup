@@ -81,13 +81,25 @@ class MainWindow(QMainWindow):
         QTimer.singleShot(100, self._refresh_nas_total)  # 启动后稍后算一次
 
     def _auto_refresh_tick(self):
-        """定期自动刷新当前项目详情 + 状态栏，发现后台新生成的备份."""
+        """定期自动刷新当前项目详情 + 状态栏，发现后台新生成的备份.
+
+        失败时打 log 而不是静默吞——磁盘掉线/项目目录被删等场景必须能在日志/状态栏看到。
+        """
+        import logging
+        log = logging.getLogger(__name__)
         try:
             if self._current_project is not None:
                 self._refresh_detail()
             self._update_status_bar()
-        except Exception:  # noqa: BLE001
-            pass
+        except Exception as e:  # noqa: BLE001
+            log.warning("自动刷新失败: %s", e, exc_info=True)
+            # 状态栏右侧角落留一个小提示，用户能感知到
+            try:
+                self._status_last_auto.setText(
+                    f"{i18n.STATUS_LAST_AUTO}: ⚠️ 刷新失败（看日志）"
+                )
+            except Exception:  # noqa: BLE001
+                pass
 
     def set_notifier(self, notifier: Callable) -> None:
         """app.py 创建主窗口后注入 tray.notify，让失败/成功能弹 Win11 toast."""
@@ -291,7 +303,7 @@ class MainWindow(QMainWindow):
         # 危险区：删除项目（视觉降权）
         self._btn_delete = SecondaryButton("🗑 删除此项目")
         self._btn_delete.setToolTip(
-            "把这个项目从备份列表移除（不会删本地文件夹；NAS 上的备份可选是否一起清）"
+            "把这个项目从备份列表移除（不会删本地文件夹；备份位置里的数据可选是否一起清）"
         )
         self._btn_delete.clicked.connect(self.action_delete_project)
         lay.addWidget(self._btn_delete)
@@ -411,7 +423,7 @@ class MainWindow(QMainWindow):
             self._detail_github.setText(f"🐙 GitHub：{e.github_url}")
             self._detail_github.setToolTip(e.github_url)
         else:
-            self._detail_github.setText("🐙 GitHub：未配置（发布版本只会上传到 NAS）")
+            self._detail_github.setText("🐙 GitHub：未配置（发布版本只会上传到本地备份位置）")
             self._detail_github.setToolTip("")
 
         # 统计
@@ -473,7 +485,7 @@ class MainWindow(QMainWindow):
             item = QListWidgetItem()
             item.setData(Qt.UserRole, p)
             item.setSizeHint(row.sizeHint())
-            item.setToolTip(f"[{kind_zh}] {p.label}\n{p.detail}\n（双击打开 NAS）")
+            item.setToolTip(f"[{kind_zh}] {p.label}\n{p.detail}\n（双击在备份位置打开）")
             self._timeline.addItem(item)
             self._timeline.setItemWidget(item, row)
 
@@ -537,16 +549,29 @@ class MainWindow(QMainWindow):
         self._status_total.setText(f"{i18n.STATUS_TOTAL_SIZE}: {self._nas_total_cache}")
 
     def _refresh_nas_total(self):
-        """后台异步重算 NAS 占用并刷新到状态栏 + 缓存."""
+        """后台异步重算备份位置占用并刷新到状态栏 + 缓存.
+
+        加超时（120 秒）：大备份库 os.walk 可能分钟级，避免一直显示"计算中…"。
+        失败/超时显示"计算失败 (点击重试)"，用户能感知状态。
+        """
         from .workers import run_async
         from .. import paths as _p
 
+        # 重入保护：上次还没回来就不再发新任务
+        if getattr(self, "_nas_total_inflight", False):
+            return
+        self._nas_total_inflight = True
+
         def _calc():
+            import time
+            start = time.monotonic()
             total = 0
             for sub in (_p.NAS_BACKUPS_DIR, _p.NAS_BUNDLES_DIR, _p.NAS_SNAPSHOTS_DIR):
                 if not sub.exists():
                     continue
                 for root, _dirs, files in __import__("os").walk(sub):
+                    if time.monotonic() - start > 120:
+                        raise TimeoutError("备份位置占用计算超时（120s）— 文件可能过多")
                     for f in files:
                         try:
                             total += (Path(root) / f).stat().st_size
@@ -555,12 +580,18 @@ class MainWindow(QMainWindow):
             return total
 
         def on_ok(total: int):
+            self._nas_total_inflight = False
             self._nas_total_cache = self._fmt_size(total)
             self._status_total.setText(f"{i18n.STATUS_TOTAL_SIZE}: {self._nas_total_cache}")
 
-        def on_err(_msg: str):
-            self._nas_total_cache = "—"
-            self._status_total.setText(f"{i18n.STATUS_TOTAL_SIZE}: —")
+        def on_err(msg: str):
+            self._nas_total_inflight = False
+            import logging
+            logging.getLogger(__name__).warning("备份位置占用计算失败: %s", msg)
+            self._nas_total_cache = "计算失败"
+            self._status_total.setText(
+                f"{i18n.STATUS_TOTAL_SIZE}: ⚠️ 计算失败（5min 后自动重试）"
+            )
 
         t = run_async(self, _calc, on_ok, on_err)
         self._active_threads.append(t)
@@ -622,7 +653,7 @@ class MainWindow(QMainWindow):
             if res.bundle_path:
                 parts.append(f"时间快照: {res.bundle_path.name}")
             if res.pushed_to_nas:
-                parts.append("已上传 NAS")
+                parts.append("已上传备份位置")
             if not parts:
                 parts.append("完成")
             if res.auto_committed:
@@ -674,7 +705,7 @@ class MainWindow(QMainWindow):
         if not push_github:
             ok = dialogs.confirm(
                 self, "未配置 GitHub",
-                "这个项目还没配 GitHub 远程。要继续吗？\n（只会上传到 NAS 并归档时间快照）",
+                "这个项目还没配 GitHub 远程。要继续吗？\n（只会上传到本地备份位置并归档时间快照）",
                 ok_text="继续", cancel_text="先去配置",
             )
             if not ok:
@@ -683,13 +714,13 @@ class MainWindow(QMainWindow):
         def on_ok(res: core.ReleaseResult):
             msg = (
                 f"已发布 {res.project_name} {res.version}\n"
-                f"NAS 上传：{'✅' if res.pushed_to_nas else '⏭️'}\n"
+                f"备份位置上传：{'✅' if res.pushed_to_nas else '⏭️'}\n"
                 f"GitHub 上传：{'✅' if res.pushed_to_github else '⏭️'}\n"
                 f"归档快照：{res.bundle_path}"
             )
             dialogs.info(self, "🚀 发布完成", msg)
             self._notify(f"🚀 已发布 {res.project_name} {res.version}",
-                         f"NAS:{res.pushed_to_nas} GitHub:{res.pushed_to_github}", "info")
+                         f"备份位置:{res.pushed_to_nas} GitHub:{res.pushed_to_github}", "info")
             self._refresh_detail()
 
         def on_err(msg: str):
@@ -845,14 +876,14 @@ class MainWindow(QMainWindow):
                         clean_errors.append(f"{p}: {ex}")
             if clean_errors:
                 dialogs.error(
-                    self, "NAS 清理部分失败",
+                    self, "备份位置清理部分失败",
                     "\n\n".join(clean_errors)
-                    + "\n\n项目已从列表移除；剩余 NAS 文件请手动清理。",
+                    + "\n\n项目已从列表移除；剩余文件请手动清理。",
                 )
 
         msg = f"已把「{e.name}」从备份列表移除。"
         if cleaned_paths:
-            msg += f"\n\n同时清空了 NAS 上 {len(cleaned_paths)} 个目录。"
+            msg += f"\n\n同时清空了备份位置下 {len(cleaned_paths)} 个目录。"
         dialogs.info(self, "已删除", msg)
         self._current_project = None
         self.refresh_projects()

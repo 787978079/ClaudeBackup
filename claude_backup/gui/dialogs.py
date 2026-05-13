@@ -1,15 +1,14 @@
-"""对话框：注册项目 / 发布版本 / 对比版本 / 浏览备份 / 友好确认."""
+"""对话框：注册项目 / 发布版本 / 对比版本 / 友好确认."""
 from __future__ import annotations
-import os
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QComboBox, QDialog, QDialogButtonBox, QFileDialog, QFormLayout, QFrame,
-    QHBoxLayout, QLabel, QLineEdit, QListWidget, QListWidgetItem, QMessageBox,
-    QPushButton, QSizePolicy, QSplitter, QTextEdit, QVBoxLayout, QWidget,
+    QDialog, QFileDialog, QFormLayout, QFrame, QHBoxLayout, QLabel, QLineEdit,
+    QListWidget, QListWidgetItem, QMessageBox, QSplitter, QTextEdit,
+    QVBoxLayout, QWidget,
 )
 
 from . import i18n
@@ -90,7 +89,7 @@ class RegisterProjectDialog(QDialog):
 
         # GitHub 字段说明
         gh_hint = make_label(
-            "💡 留空 = 只备份到 NAS，不上传 GitHub。第一次推送时系统会弹浏览器登录 GitHub（一次就好）。",
+            "💡 留空 = 只备份到本地备份位置，不上传 GitHub。第一次推送时系统会弹浏览器登录 GitHub（一次就好）。",
             "Dim",
         )
         gh_hint.setWordWrap(True)
@@ -340,152 +339,6 @@ class CompareResultDialog(QDialog):
         lay.addLayout(btn_row)
 
 
-class BrowseBackupsDialog(QDialog):
-    """浏览所有备份点 — 选一个，可以打开 NAS 目录 / 对比 / 恢复.
-
-    用 Signal 把动作请求转发给 caller（main_window），便于 caller 用 run_async
-    跑耗时操作.
-    """
-
-    request_open = Signal(object)     # BackupPoint
-    request_compare = Signal(object)  # BackupPoint
-    request_restore = Signal(object)  # BackupPoint
-
-    def __init__(self, parent: QWidget | None,
-                 project_name: str,
-                 points: list):
-        super().__init__(parent)
-        self.setWindowTitle(f"{project_name} — 浏览备份")
-        self.setMinimumSize(900, 560)
-        self._points = points or []
-        self._build()
-
-    def _build(self):
-        lay = QVBoxLayout(self)
-        lay.setContentsMargins(20, 20, 20, 20)
-        lay.setSpacing(12)
-
-        # 顶部说明（拆两行更易读）
-        line1 = make_label("下面是这个项目所有的备份点 —— 选一个开始操作。", "Body")
-        line2 = make_label("下方按钮可以打开 NAS 目录、对比改动、或者把项目内容恢复到那个版本。", "Dim")
-        lay.addWidget(line1)
-        lay.addWidget(line2)
-
-        # 类型图例（去掉术语括号）
-        legend = QLabel("📁 目录快照（直接拷回即可还原）　　🟢 时间快照　　⭐ 发布版本　　🔵 提交")
-        legend.setObjectName("Dim")
-        lay.addWidget(legend)
-
-        # 列表 / 空状态
-        if not self._points:
-            empty = QLabel(
-                "📦 这个项目还没有备份点\n\n回到主面板，点右侧「📸 立即备份」就能开始。"
-            )
-            empty.setObjectName("Dim")
-            empty.setAlignment(Qt.AlignCenter)
-            empty.setStyleSheet("padding: 60px; font-size: 15px;")
-            self._list = None  # 标记空态
-            lay.addWidget(empty, 1)
-        else:
-            self._list = QListWidget()
-            for p in self._points:
-                self._list.addItem(_make_point_item(p))
-            self._list.setCurrentRow(0)
-            self._list.itemDoubleClicked.connect(lambda _i: self._on_open())
-            self._list.currentItemChanged.connect(lambda *_: self._refresh_btns())
-            lay.addWidget(self._list, 1)
-
-        # 操作按钮
-        row = QHBoxLayout()
-        row.setSpacing(10)
-        self._btn_open = SecondaryButton("📂 打开 NAS 目录")
-        self._btn_compare = SecondaryButton("🔍 对比此版本")
-        self._btn_restore = PrimaryButton("⏮ 恢复到这个版本")
-        self._btn_open.clicked.connect(self._on_open)
-        self._btn_compare.clicked.connect(self._on_compare)
-        self._btn_restore.clicked.connect(self._on_restore)
-        row.addWidget(self._btn_open)
-        row.addWidget(self._btn_compare)
-        row.addStretch()
-        row.addWidget(self._btn_restore)
-        lay.addLayout(row)
-
-        # 底部关闭
-        bottom = QHBoxLayout()
-        bottom.addStretch()
-        close = SecondaryButton("关闭")
-        close.clicked.connect(self.accept)
-        bottom.addWidget(close)
-        lay.addLayout(bottom)
-
-        self._refresh_btns()
-
-    def _selected_point(self):
-        if self._list is None:
-            return None
-        item = self._list.currentItem()
-        return item.data(Qt.UserRole) if item else None
-
-    def _refresh_btns(self):
-        p = self._selected_point()
-        if p is None:
-            self._btn_open.setEnabled(False)
-            self._btn_compare.setEnabled(False)
-            self._btn_restore.setEnabled(False)
-            return
-        # 打开：dir_snapshot 打开目录、bundle/release 在文件管理器选中文件、commit 不能打开
-        self._btn_open.setEnabled(p.kind in ("dir_snapshot", "bundle", "release"))
-        # 对比 / 恢复：仅 dir_snapshot
-        is_dir = (p.kind == "dir_snapshot")
-        self._btn_compare.setEnabled(is_dir)
-        self._btn_restore.setEnabled(is_dir)
-        if is_dir:
-            self._btn_compare.setToolTip("和这个项目的另一个目录快照对比文件改动")
-            self._btn_restore.setToolTip("把整个项目内容替换为这个版本（先自动备份当前状态）")
-        else:
-            self._btn_compare.setToolTip("对比功能只针对目录快照（📁）")
-            self._btn_restore.setToolTip("一键恢复只支持目录快照（📁）")
-
-    def _on_open(self):
-        p = self._selected_point()
-        if p is None:
-            return
-        path = getattr(p, "fs_path", None)
-        if path is None:
-            return
-        try:
-            if Path(path).is_dir():
-                os.startfile(str(path))
-            else:
-                # 在资源管理器选中文件
-                os.startfile(str(Path(path).parent))
-        except OSError as e:
-            error(self, "打开失败", str(e))
-
-    def _on_compare(self):
-        p = self._selected_point()
-        if p is None:
-            return
-        self.request_compare.emit(p)
-
-    def _on_restore(self):
-        p = self._selected_point()
-        if p is None or p.kind != "dir_snapshot":
-            return
-        ok = confirm(
-            self, "恢复到这个版本？",
-            f"将把整个项目内容替换为「{p.label}」的快照。\n\n"
-            f"放心：恢复前会自动把当前项目状态备份一份到 NAS\\snapshots\\_restore_safety\\，\n"
-            f"如果恢复出错可以从那里回滚。\n\n"
-            f"项目里的 .git 目录（git 历史）不会被动。",
-            ok_text="是的，恢复到这里",
-            cancel_text="再想想",
-        )
-        if not ok:
-            return
-        self.request_restore.emit(p)
-
-
 class ConfigGitHubDialog(QDialog):
     """配置 / 修改项目的 GitHub 远程地址."""
 
@@ -517,7 +370,7 @@ class ConfigGitHubDialog(QDialog):
         lay.addWidget(self._url_edit)
 
         hint = make_label(
-            "💡 留空 = 移除 GitHub 关联（保留 NAS 备份）。"
+            "💡 留空 = 移除 GitHub 关联（保留本地备份位置数据）。"
             "第一次推送时系统的 Git Credential Manager 会弹浏览器登录 GitHub（一次就好）。",
             "Mini",
         )
@@ -553,7 +406,7 @@ def confirm_delete_project(parent: QWidget | None, project_name: str) -> tuple[b
         f"确定要把「{project_name}」从备份列表里移除吗？\n\n"
         f"项目本地文件夹不会被删，只是 ClaudeBackup 不再管它。"
     )
-    cb = QCheckBox("同时清空 NAS 上的所有备份（⚠️ 此操作不可恢复）")
+    cb = QCheckBox("同时清空备份位置里的所有备份（⚠️ 此操作不可恢复）")
     cb.setChecked(False)
     box.setCheckBox(cb)
     ok_btn = box.addButton("是的，移除", QMessageBox.AcceptRole)
@@ -564,10 +417,10 @@ def confirm_delete_project(parent: QWidget | None, project_name: str) -> tuple[b
     # 勾了 NAS 清理 → 二次红色警告，再确认一次
     if confirmed and also_clean:
         warn = QMessageBox(parent)
-        warn.setWindowTitle("⚠️ 真的要清空 NAS 备份吗？")
+        warn.setWindowTitle("⚠️ 真的要清空备份位置数据吗？")
         warn.setIcon(QMessageBox.Critical)
         warn.setText(
-            f"你勾选了「同时清空 NAS 上的所有备份」。\n\n"
+            f"你勾选了「同时清空备份位置里的所有备份」。\n\n"
             f"这会**永久删除**「{project_name}」在备份位置下的：\n"
             f"  • git-backups\\{project_name}.git\\\n"
             f"  • git-bundles\\{project_name}\\（含 releases）\n"
@@ -575,8 +428,8 @@ def confirm_delete_project(parent: QWidget | None, project_name: str) -> tuple[b
             f"删除后无法从此处恢复 — 只能去 GitHub（如配置过）拉回。"
         )
         del_btn = warn.addButton("永久删除", QMessageBox.DestructiveRole)
-        warn.addButton("只移除登记，保留 NAS 数据", QMessageBox.AcceptRole)
-        warn.setDefaultButton(warn.buttons()[-1])  # 默认按钮 = 保留
+        keep_btn = warn.addButton("只移除登记，保留备份位置数据", QMessageBox.AcceptRole)
+        warn.setDefaultButton(keep_btn)  # 默认 = 保留数据，避免 Enter 误删
         warn.exec()
         if warn.clickedButton() is not del_btn:
             also_clean = False

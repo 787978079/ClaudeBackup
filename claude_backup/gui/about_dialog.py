@@ -16,7 +16,7 @@ from .widgets import PrimaryButton, SecondaryButton, make_label, make_separator
 from .. import __version__
 
 
-_TAGLINE = "把代码自动备份到 NAS 和 GitHub，再也不用担心丢失"
+_TAGLINE = "把代码自动备份到本地备份盘和 GitHub，再也不用担心丢失"
 _DESCRIPTION = (
     "ClaudeBackup 是 Windows 桌面 Git 三层备份工具：\n"
     "  • 完整目录拷贝（直接看 / 直接拷回，零门槛恢复）\n"

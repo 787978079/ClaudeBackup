@@ -136,7 +136,7 @@ class TimelineDialog(QDialog):
 
         # 底部按钮
         btns = QHBoxLayout()
-        self._open_btn = SecondaryButton("📂 在 NAS 打开这个版本")
+        self._open_btn = SecondaryButton("📂 在备份位置打开这个版本")
         self._open_btn.clicked.connect(self._on_open)
         btns.addWidget(self._open_btn)
         btns.addStretch()
@@ -216,7 +216,7 @@ class TimelineDialog(QDialog):
         ok = dialogs.confirm(
             self, "恢复到这个版本？",
             f"将把整个项目内容替换为「{p.label}」的快照。\n\n"
-            "恢复前会自动把当前项目状态备份一份到 NAS\\snapshots\\_restore_safety\\，"
+            "恢复前会自动把当前项目状态备份一份到 备份位置\\snapshots\\_restore_safety\\，"
             "如果恢复出错可以从那里回滚。\n\n"
             "项目里的 .git 目录（git 历史）不会被动。",
             ok_text="是的，恢复到这一刻",

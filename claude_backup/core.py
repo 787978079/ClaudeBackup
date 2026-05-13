@@ -373,13 +373,13 @@ def _diagnose_git_add_error(stderr: str) -> str | None:
         offending = m.group(1).strip()
         return (
             f"项目里有 Windows 保留名文件 '{offending}'，git 无法索引。"
-            f"完整目录已备份到 NAS。修复方法：在 PowerShell 跑 "
+            f"完整目录已备份到备份位置。修复方法：在 PowerShell 跑 "
             f"`Remove-Item -LiteralPath '\\\\?\\<完整路径>' -Force` 删除该文件后重试"
         )
     if "short read while indexing" in stderr or "failed to insert into database" in stderr:
         return (
             "git 索引文件失败（可能存在 Windows 保留名文件 NUL/CON/PRN 等，"
-            "或文件被其它进程占用）。完整目录已备份到 NAS"
+            "或文件被其它进程占用）。完整目录已备份到备份位置"
         )
     return None
 
@@ -418,7 +418,7 @@ def _auto_commit_if_needed(proj: Path, *, step: "ProgressFn") -> tuple[bool, boo
         except subprocess.TimeoutExpired:
             return False, False, (
                 "git add -A 超时（项目工作树过大）。"
-                "完整目录已备份到 NAS；建议在项目根加 .gitignore "
+                "完整目录已备份到备份位置；建议在项目根加 .gitignore "
                 "排除 node_modules / .playwright-mcp / dist 等目录后再试一次"
             )
         except git_ops.GitError as e:
@@ -444,7 +444,7 @@ def _auto_commit_if_needed(proj: Path, *, step: "ProgressFn") -> tuple[bool, boo
                 git_ops.commit_all_or_empty(proj, f"manual-snapshot {ts}")
             except subprocess.TimeoutExpired:
                 return False, True, (
-                    "git add -A 超时（项目工作树过大）。完整目录已备份到 NAS；"
+                    "git add -A 超时（项目工作树过大）。完整目录已备份到备份位置；"
                     "建议加 .gitignore 排除大目录后再试"
                 )
             except git_ops.GitError as e:
@@ -492,12 +492,12 @@ def init_project(project_path: str | Path,
     nas_mirror = paths.NAS_BACKUPS_DIR / f"{name}.git"
     bundle_dir = paths.NAS_BUNDLES_DIR / name
 
-    step("准备 NAS 备份目录")
+    step("准备备份目录")
     paths.ensure_nas_dirs()
 
     created_mirror = False
     if not nas_mirror.exists():
-        step(f"创建 NAS 镜像 {nas_mirror.name}")
+        step(f"创建镜像 {nas_mirror.name}")
         git_ops.init_bare(nas_mirror)
         created_mirror = True
         log.info("创建 NAS 镜像: %s", nas_mirror)
@@ -542,7 +542,7 @@ def init_project(project_path: str | Path,
     registry.upsert(entry)
 
     if git_ops.has_any_commit(proj):
-        step("首次同步到 NAS（项目越大越慢）")
+        step("首次同步到备份位置（项目越大越慢）")
         try:
             git_ops.push_all(proj, paths.NAS_REMOTE_NAME)
             registry.update_last_backup(proj, git_ops.head_hash(proj))
@@ -606,7 +606,7 @@ def backup_project(project_path: str | Path,
     #    定时备份每天总要产出一份目录快照，即使代码没变 —— 这是"时光机"价值所在.
     dir_snapshot_path: Path | None = None
     if mirror_files:
-        step("拷贝完整目录到 NAS（排除 .git / node_modules 等）")
+        step("拷贝完整目录到备份位置（排除 .git / node_modules 等）")
         ts_full = datetime.now().strftime("%Y-%m-%d_%H%M%S")
         snapshots_root = paths.NAS_SNAPSHOTS_DIR / name
         snapshots_root.mkdir(parents=True, exist_ok=True)
@@ -670,7 +670,7 @@ def backup_project(project_path: str | Path,
         raise RuntimeError(f"项目缺少 nas remote，请先重新添加项目: {proj}")
     pushed_to_nas = False
     if git_ops.has_any_commit(proj):
-        step("上传到 NAS")
+        step("上传到备份位置")
         try:
             git_ops.push_all(proj, paths.NAS_REMOTE_NAME)
             pushed_to_nas = True
@@ -678,7 +678,7 @@ def backup_project(project_path: str | Path,
             # 推送失败也不打断 dir_snapshot 备份
             log.warning("push 到 NAS 失败：%s", e)
             git_baseline_warning = (git_baseline_warning + "；" if git_baseline_warning else "") + \
-                f"NAS 推送失败：{getattr(e, 'stderr', None) or e}"
+                f"备份位置推送失败：{getattr(e, 'stderr', None) or e}"
 
     new_head = git_ops.head_hash(proj) if git_ops.has_any_commit(proj) else None
 
@@ -1102,6 +1102,15 @@ def restore_from_dir_snapshot(snapshot_path: str | Path,
             dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(src, dst)
             count += 1
+
+    # 刷新 registry 的 last_backup_at — 不然主面板会把刚 restore 的项目
+    # 标记成"有未备份的修改"（change_detect 比对工作树和 last_backup_hash
+    # 会发现一堆 diff），用户看不懂。Restore 不动 .git，所以 head 是不变的。
+    try:
+        if git_ops.is_git_repo(proj) and git_ops.has_any_commit(proj):
+            registry.update_last_backup(proj, git_ops.head_hash(proj))
+    except (git_ops.GitError, OSError) as e:
+        log.warning("restore 后刷新 registry last_backup 失败: %s", e)
 
     step("完成")
     log.info("从快照 %s 恢复 %d 个文件到 %s", snap, count, proj)

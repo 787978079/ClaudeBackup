@@ -205,7 +205,7 @@ class FileHistoryDialog(QDialog):
             self._show_preview(v)
             self._restore_btn.setEnabled(True)
             self._restore_btn.setToolTip(
-                "把这个版本的文件覆写到项目里（覆写前先把当前文件备份到 NAS）"
+                "把这个版本的文件覆写到项目里（覆写前先把当前文件备份到备份位置）"
             )
             return
 
@@ -298,7 +298,7 @@ class FileHistoryDialog(QDialog):
             f"  {_KIND_EMOJI.get(v.point.kind,'•')} "
             f"[{_KIND_LABEL_ZH.get(v.point.kind, v.point.kind)}] "
             f"{v.point.label}（{_fmt_when(v.point.when)}）\n\n"
-            "覆写前会自动把当前文件备份到 NAS\\snapshots\\_restore_safety\\<项目>\\files\\，"
+            "覆写前会自动把当前文件备份到 备份位置\\snapshots\\_restore_safety\\<项目>\\files\\，"
             "如果恢复出错可以从那里手动取回。",
             ok_text="是的，恢复",
             cancel_text="再想想",

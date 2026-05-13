@@ -7,7 +7,6 @@
   compare <path> <ref1> <ref2>
   list <path>
   scheduled-daily
-  hook-push                            # Stop hook 调用：当前 cwd 推 nas（容错）
   gui                                  # 启动 GUI（默认行为）
   tray                                 # 仅启动托盘
   ui-action <name> --path <p>          # 右键菜单/托盘等触发的 GUI 动作
@@ -20,7 +19,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import __version__, core, git_ops, logger, paths, registry
+from . import __version__, config, core, git_ops, logger, paths, registry
 
 
 def _print_kv(d: dict[str, object]) -> None:
@@ -35,12 +34,12 @@ def cmd_init(args: argparse.Namespace) -> int:
     print(f"已注册项目: {res.project.name}")
     _print_kv({
         "本地路径": res.project.path,
-        "NAS 镜像": res.project.nas_mirror,
+        "备份位置镜像": res.project.nas_mirror,
         "Bundle 目录": res.project.bundle_dir,
         "GitHub": res.project.github_url or "(未配置)",
         "新建镜像": res.created_mirror,
         "新建 bundle 目录": res.created_bundle_dir,
-        "新加 nas remote": res.added_remote,
+        "新加备份位置 remote": res.added_remote,
         "新加 GitHub remote": res.added_github_remote,
     })
     return 0
@@ -60,7 +59,7 @@ def cmd_backup(args: argparse.Namespace) -> int:
         return 2
     print(f"项目 {res.project_name} 备份完成")
     _print_kv({
-        "推 NAS": res.pushed_to_nas,
+        "推备份位置": res.pushed_to_nas,
         "时间快照": res.bundle_path or "(跳过)",
         "HEAD": res.new_head[:12] if res.new_head else "(无 commit)",
     })
@@ -76,7 +75,7 @@ def cmd_release(args: argparse.Namespace) -> int:
     print(f"项目 {res.project_name} 已发布版本 {res.version}")
     _print_kv({
         "新建 tag": res.tag_created,
-        "推 NAS": res.pushed_to_nas,
+        "推备份位置": res.pushed_to_nas,
         "推 GitHub": res.pushed_to_github,
         "归档 bundle": res.bundle_path,
     })
@@ -104,6 +103,14 @@ def cmd_list(args: argparse.Namespace) -> int:
 
 def cmd_scheduled_daily(args: argparse.Namespace) -> int:
     logger.init(verbose=args.verbose)
+    # 用户在设置/托盘里勾了"暂停每日自动备份"就真的别跑——曾经只刷 UI 文案，
+    # Task Scheduler 到点照样备份，导致勾了暂停的人 NAS 仍被偷偷占用。
+    cfg = config.load()
+    if cfg.schedule_paused:
+        msg = "scheduled-daily 跳过：用户已在设置里暂停每日备份"
+        print(msg)
+        logger.hook_log(msg, "INFO")
+        return 0
     res = core.scheduled_daily()
     print(f"开始: {res.started_at:%Y-%m-%d %H:%M:%S}")
     print(f"结束: {res.finished_at:%Y-%m-%d %H:%M:%S}")
@@ -116,26 +123,6 @@ def cmd_scheduled_daily(args: argparse.Namespace) -> int:
         for n, r in res.failed:
             print(f"  - {n}: {r}")
     return 0 if not res.failed else 1
-
-
-def cmd_hook_push(args: argparse.Namespace) -> int:
-    """Stop hook 备用入口（PowerShell 也可以直接调 git push，这里给 Python 路径备选）.
-
-    永远 exit 0，避免阻塞 Claude. 错误写入 hook.log.
-    """
-    cwd = Path.cwd()
-    try:
-        if not git_ops.is_git_repo(cwd):
-            return 0
-        if not git_ops.has_remote(cwd, paths.NAS_REMOTE_NAME):
-            return 0
-        if not git_ops.has_any_commit(cwd):
-            return 0
-        git_ops.push_all(cwd, paths.NAS_REMOTE_NAME)
-        logger.hook_log(f"pushed {cwd} to nas", "INFO")
-    except Exception as e:  # noqa: BLE001
-        logger.hook_log(f"push failed at {cwd}: {e}", "ERROR")
-    return 0
 
 
 def cmd_gui(args: argparse.Namespace) -> int:
@@ -185,7 +172,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp = sub.add_parser("backup", help="立即对项目做一次快照")
     sp.add_argument("path")
-    sp.add_argument("--no-bundle", action="store_true", help="只推 NAS，不生成 bundle")
+    sp.add_argument("--no-bundle", action="store_true", help="只推备份位置，不生成 bundle")
     sp.add_argument("--note", help="备注（写入日志）")
     sp.set_defaults(func=cmd_backup)
 
@@ -208,9 +195,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     sp = sub.add_parser("scheduled-daily", help="Task Scheduler 调用：变化检测 + 全量备份")
     sp.set_defaults(func=cmd_scheduled_daily)
-
-    sp = sub.add_parser("hook-push", help="Stop hook 调用：当前 cwd 推 NAS（容错）")
-    sp.set_defaults(func=cmd_hook_push)
 
     sp = sub.add_parser("gui", help="启动 GUI 主面板（默认行为）")
     sp.set_defaults(func=cmd_gui)

@@ -174,9 +174,9 @@ class _BackupLocationStep(_Step):
         if cur:
             return str(cur)
         # 2. 老用户升级场景：扫几个候选位置看是否已有 .registry.json
-        #    （早期硬编码 Y:\，或之前用户自己选过的常见位置）
+        #    （之前用户自己选过的常见位置——Y:\ 是早期开发者机器的硬编码，
+        #    新发布的开源版本不再优先推荐 Y:\）
         for cand in (
-            Path(r"Y:\\"),
             Path("D:\\ClaudeBackup-Data"),
             paths._user_home() / "ClaudeBackup-Data",
         ):
@@ -272,7 +272,7 @@ class _PickStep(_Step):
         gh_label = QLabel("（可选）GitHub 仓库地址：")
         gh_label.setObjectName("Dim")
         self._github_edit = QLineEdit()
-        self._github_edit.setPlaceholderText("https://github.com/你的用户名/项目.git  ——  留空就只用 NAS")
+        self._github_edit.setPlaceholderText("https://github.com/你的用户名/项目.git  ——  留空就只备到本地备份位置")
         gh_row.addWidget(gh_label)
         gh_row.addWidget(self._github_edit, 1)
         lay.addLayout(gh_row)
