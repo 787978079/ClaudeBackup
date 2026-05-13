@@ -323,9 +323,10 @@ class TimelineRow(QWidget):
 
         # 行内/行间间距：QListWidget::item { padding } 在 setItemWidget 模式下被忽略，
         # 卡片 bg 改 transparent 后视觉 padding 缓冲也消失了，文字会挤兑成一坨。
-        # 靠 row 自身上下 margins(12) + 内部 col spacing(6) 撑开间距。
+        # 靠 row 自身上下 margins(14) + 内部 col spacing(10) 撑开间距。
+        # 14/10 是迭代试出来的最小可读值，再小就会有"挤兑"反馈。
         lay = QHBoxLayout(self)
-        lay.setContentsMargins(8, 12, 8, 12)
+        lay.setContentsMargins(8, 14, 8, 14)
         lay.setSpacing(10)
 
         bar = QFrame()
@@ -336,7 +337,7 @@ class TimelineRow(QWidget):
 
         col = QVBoxLayout()
         col.setContentsMargins(0, 0, 0, 0)
-        col.setSpacing(6)
+        col.setSpacing(10)
 
         top = QHBoxLayout()
         top.setSpacing(8)
