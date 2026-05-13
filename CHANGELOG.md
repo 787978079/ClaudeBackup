@@ -1,5 +1,21 @@
 # Changelog
 
+## v0.2.4 — 2026-05-13
+
+修 v0.2.3 删 surface fill 后引入的 timeline 文字挤兑。
+
+### 🐛 修复
+
+- **timeline 行内 + 行间间距撑开**：v0.2.3 把 `QListWidget` 背景改 transparent 后，原本 surface 色块的"上下 padding 视觉缓冲"消失了。加上 Qt 经典坑 `QListWidget::item { padding }` 在 `setItemWidget` 模式下被忽略 → 每行 timestamp/hash 紧贴 detail，相邻 row 也紧贴成一坨。
+  - `TimelineRow` `lay.setContentsMargins` 上下 6 → 12（row 自身上下 padding 撑开）
+  - `col.setSpacing` 2 → 6（timestamp 行 和 detail 行之间留白）
+
+### 兼容性
+
+- 纯视觉改动。配置/registry/备份数据完全兼容 v0.2.x。
+
+---
+
 ## v0.2.3 — 2026-05-13
 
 根治"卡片矩形蒙版"视觉问题。
