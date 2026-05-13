@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.2.5 — 2026-05-13
+
+继续修 v0.2.4 后用户实测发现的两个问题：
+
+### 🐛 BUG 修复
+
+- **timeline 行内 timestamp/badge 与 detail 行紧贴（v0.2.4 修了但仍偏挤）**：col.setSpacing 6→10、lay 上下 margins 12→14。row 总高 65 → 73px (+8px)，离屏渲染量化验证行内 + 行间都清晰分开。
+- **`list_remotes()` 不识别含空格路径的 remote URL**：项目本地路径含空格（如 `D:\My_Project\Prompt help`）时，git remote URL 为 `Y:\git-backups\Prompt help.git`，原 regex `^(\S+)\s+(\S+)\s+\((fetch|push)\)$` 用 `\S+` 匹配 URL，遇到空格就截断 → `has_remote("nas")` 永远返回 False → backup_project 抛"项目缺少 nas remote，请先重新添加项目"假错误。修复：URL 部分改非贪婪 `(.+?)`。加回归测试 `test_remote_url_with_spaces`。
+
+### 兼容性
+
+- 配置/registry/备份数据完全兼容 v0.2.x。
+
+---
+
 ## v0.2.4 — 2026-05-13
 
 UI 大改：emoji 全面替换为矢量图标 + timeline 文字间距修复。
