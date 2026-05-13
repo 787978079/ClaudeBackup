@@ -14,7 +14,7 @@
 ; from the script's directory), so the repo is portable.
 
 #define MyAppName "ClaudeBackup"
-#define MyAppVersion "0.2.1"
+#define MyAppVersion "0.2.2"
 #define MyAppPublisher "787978079"
 #define MyAppExeName "ClaudeBackup.exe"
 #define MyAppURL "https://github.com/787978079/ClaudeBackup"

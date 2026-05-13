@@ -1,5 +1,25 @@
 # Changelog
 
+## v0.2.2 — 2026-05-13
+
+UI 视觉扁平化：删除装饰性 1px 暗描边。
+
+### 🎨 视觉
+
+- **删 4 处装饰性 border**（全局 grep 30+ 处后分类）：
+  - `QFrame#Card` — 详情卡描边 → 靠 surface 色与 page bg 对比区分
+  - `QPushButton#ActionCard` — 右侧"立即备份/发布版本/对比版本/时间机器"卡，原本右下能看到 L 形暗线
+  - `QListWidget/Tree/Table` — 嵌在 Card 内不需要双层框感
+  - `TimelineRow` badge — 行内"提交/时间快照/目录快照/发布版本"徽章不再有暗描边切割
+- **保留功能性 border**：TopBar/StatusBar 分隔线、按钮 hover 反馈、输入框定位、QCheckBox indicator、QMenu/QToolTip。
+- **徽章背景填充加浓**（alpha 60 → 100），删 border 后靠纯色块承担类型识别。
+
+### 兼容性
+
+- 纯视觉改动，配置/registry/备份数据完全兼容 v0.2.1。
+
+---
+
 ## v0.2.1 — 2026-05-13
 
 P0 BUG 修复 + 多项体验改善 + 死代码清理。
