@@ -1,5 +1,38 @@
 # Changelog
 
+## v0.2.1 — 2026-05-13
+
+P0 BUG 修复 + 多项体验改善 + 死代码清理。
+
+### 🐛 P0 BUG 修复
+
+- **`schedule_paused` 终于真的暂停**：GUI 状态栏显示"(已暂停)"但 Task Scheduler 仍到点跑备份 — `core.scheduled_daily` 完全不读该字段。`cmd_scheduled_daily` 起手读 `cfg.schedule_paused` 直接返回 0 + 写 hook 日志。
+- **`_auto_refresh_tick` 不再静默吞异常**：之前 `except Exception: pass` 让磁盘掉线/项目目录被删等场景永远显示 stale 数据。改 `log.warning` + 状态栏标红"⚠️ 刷新失败"。
+- **托盘 `_backup_cwd` / `_backup_all` 走 `run_async`**：之前同步串行备份 N 个项目，分钟级阻塞整个托盘菜单导致右键无响应。
+
+### 🎨 视觉
+
+- **时间线"线框"消除**：每行 `col.setSpacing(2)` 漏出更亮的 QListWidget surface，形成贯穿整行的横向亮条。改 `TimelineRow` 自身和内部 QLabel 都透明，彩色 bar 和徽章不受影响。
+
+### 🛠 体验改进
+
+- **全局"NAS"文案 → "备份位置/备份盘"**：用户实际可能选 D:\ 或外置硬盘，原文案让非 NAS 用户困惑。代码内部标识符 `NAS_REMOTE_NAME / nas_mirror` 等保留不变。
+- **备份位置占用计算加 120s 超时 + 失败态 + 重入保护**，避免大库一直停在"计算中…"。
+- **`restore_from_dir_snapshot` 完成后刷新 `last_backup_at`**：之前刚 restore 完会被误标"有未备份的修改"。
+- **删项目清空数据二次确认默认按钮显式指向"保留数据"**，避免 Enter 误删。
+- **onboarding 移除 `Y:\\` 推荐硬编码**（早期作者机器遗留）。
+
+### 🗑 死代码清理
+
+- 删 `BrowseBackupsDialog`（`dialogs.py`，~150 行，已被 `TimelineDialog` + `FileHistoryDialog` 替代）。
+- 删 `cmd_hook_push`（`cli.py`，Stop hook 实际由 PowerShell 直接调 `git push`，此 Python 入口从未启用）。
+
+### 兼容性
+
+- 配置文件、registry、备份数据完全向后兼容 v0.2.x，升级无需操作。
+
+---
+
 ## v0.2.0 — 2026-05-11
 
 第一次系统化的体验打磨。重点在视觉品牌、Onboarding 修复、健康度可见性。

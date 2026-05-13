@@ -1,6 +1,6 @@
 [project]
 name = "claude-backup"
-version = "0.2.0"
+version = "0.2.1"
 description = "三层 Git 备份桌面工具：Claude Stop hook + NAS 镜像 + GitHub release"
 requires-python = ">=3.11"
 dependencies = [
