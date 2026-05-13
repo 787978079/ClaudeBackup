@@ -115,7 +115,9 @@ def list_remotes(cwd: Path | str) -> dict[str, str]:
     r = run(["remote", "-v"], cwd=cwd, check=False)
     remotes: dict[str, str] = {}
     for line in r.stdout.splitlines():
-        m = re.match(r"^(\S+)\s+(\S+)\s+\((fetch|push)\)$", line)
+        # URL 部分可能含空格（如 Windows 路径 `D:\My Project\foo.git`），
+        # 必须用非贪婪 (.+?) 而非 (\S+)，否则路径有空格的项目永远解析不出 remote。
+        m = re.match(r"^(\S+)\s+(.+?)\s+\((fetch|push)\)$", line)
         if m and m.group(3) == "fetch":
             remotes[m.group(1)] = m.group(2)
     return remotes

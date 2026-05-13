@@ -33,6 +33,21 @@ def test_remote_add_list(fresh_repo: Path, tmp_path: Path):
     assert not git_ops.has_remote(fresh_repo, "origin")
 
 
+def test_remote_url_with_spaces(fresh_repo: Path, tmp_path: Path):
+    """回归：path 含空格的 remote URL 也能被 list_remotes 正确解析。
+
+    之前 regex 用 (\\S+) 匹配 URL，遇到 `D:\\My Project\\foo.git` 会截断在
+    `D:\\My`，导致 has_remote 永远返回 False，触发"项目缺少 nas remote"假错误。
+    """
+    bare = tmp_path / "dir with spaces" / "mirror.git"
+    git_ops.init_bare(bare)
+    git_ops.add_remote(fresh_repo, "nas", str(bare))
+    remotes = git_ops.list_remotes(fresh_repo)
+    assert "nas" in remotes
+    assert remotes["nas"] == str(bare)
+    assert git_ops.has_remote(fresh_repo, "nas")
+
+
 def test_push_to_bare(fresh_repo: Path, tmp_path: Path):
     bare = tmp_path / "mirror.git"
     git_ops.init_bare(bare)
